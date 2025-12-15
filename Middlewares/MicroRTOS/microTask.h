@@ -41,6 +41,8 @@ void vMrTaskError(void);
 MrTaskType *ptypeMrTaskReadyHighGet(void);
 
 int8_t cMrTaskCreate(MrTaskType **pptypeTask, vMrTaskFunction pvFunction, char *pcName, int32_t iPriority, int32_t iStackSize, uint32_t uiParameters);
+int8_t cMrTaskPrioritySet(MrTaskType *ptypeTask, int32_t priority);
+int32_t iMrTaskPriorityGet(MrTaskType *ptypeTask);
 int8_t cMrTaskResume(MrTaskType *ptypeTask);
 int8_t cMrTaskSuspend(MrTaskType *ptypeTask);
 int8_t cMrTaskStart(void);

@@ -95,6 +95,45 @@ int8_t cMrTaskCreate(MrTaskType **pptypeTask, vMrTaskFunction pvFunction, char *
     return 0;
 }
 
+/* 设置任务优先级 */
+int8_t cMrTaskPrioritySet(MrTaskType *ptypeTask, int32_t priority)
+{
+    if(ptypeTask == NULL)
+        return 1;
+
+    /* 进入临界段 */
+    vMrDisableIsr();
+
+    ptypeTask->priority = priority;
+
+    if(ptypeTask->listReady.pNext != &ptypeTask->listReady)
+    {
+        /* 从就绪链表中移除 */
+        cMrListRemove(&ptypeTask->listReady);
+
+        /* 重新插入到就绪链表 */
+        ptypeTask->listReady.value = ptypeTask->priority;
+        cMrListInsert(&g_typeMrListTaskReady, &ptypeTask->listReady);
+    }
+
+    /* 退出临界段 */
+    vMrEnableIsr();
+
+    /* 触发任务切换 */
+    vMrCpuYield();
+
+    return 0;
+}
+
+/* 获取任务优先级 */
+int32_t iMrTaskPriorityGet(MrTaskType *ptypeTask)
+{
+    if(ptypeTask == NULL)
+        return 0;
+
+    return ptypeTask->priority;
+}
+
 /* 恢复任务 */
 int8_t cMrTaskResume(MrTaskType *ptypeTask)
 {
