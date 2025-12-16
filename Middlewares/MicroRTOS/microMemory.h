@@ -3,7 +3,7 @@
 
 
 /* 使x对n字节对齐 */
-#define mrMemoryRoundUp(x)  (((x) + (sizeof(size_t) - 1)) & (~(sizeof(size_t) - 1)))
+#define mrMemoryRoundUp(x)  (((x) + (sizeof(void *) - 1)) & (~(sizeof(void *) - 1)))
 
 
 void *pvMrMemoryMalloc(size_t size);

@@ -8,11 +8,9 @@
 
 
 typedef struct{
-    size_t head;
-    size_t tail;
+    void *next;
+    void *tail;
 }MrMemoryType;
-
-#define MEM_REG(addr)  (*(volatile size_t *)((size_t)(addr)))
 
 
 /* 动态内存头部信息 */
@@ -26,18 +24,17 @@ void vMrMemoryInit(void)
     MrMemoryType *ptypeMem = &g_typeMrMemoryHead;
 
     /* 地址 N 字节对齐 */
-    ptypeMem->head = mrMemoryRoundUp((size_t)st_MrMemory);
-    ptypeMem->tail = ptypeMem->head + configMr_MEMORY_SIZE;
+    ptypeMem->next = (void *)mrMemoryRoundUp((size_t)st_MrMemory);
+    ptypeMem->tail = ptypeMem->next + configMr_MEMORY_SIZE;
 
     /* 初始化第一个空闲空间 */
-    MEM_REG(ptypeMem->head) = ptypeMem->tail;
+    ((MrMemoryType *)ptypeMem->next)->next = ptypeMem->tail;
 }
 
 void *pvMrMemoryMalloc(size_t size)
 {
     void *pvMem = NULL;
-    MrMemoryType *ptypeMem = &g_typeMrMemoryHead;
-    size_t head, free, headMin = 0;
+    MrMemoryType *ptypeMem = &g_typeMrMemoryHead, *now, *free = NULL;
     size_t sizeNow, sizeMin = (size_t)-1;
 
     if(size < 1)
@@ -54,18 +51,18 @@ void *pvMrMemoryMalloc(size_t size)
     size = mrMemoryRoundUp(size);
 
     /* 遍历mem空间 */
-    for(head = ptypeMem->head; head < ptypeMem->tail; head = MEM_REG(head) & (~(size_t)1))
+    for(now = ptypeMem->next; (void *)now < ptypeMem->tail; now = (void *)((size_t)now->next & (~(size_t)1)))
     {
         /* bit0 表示 当前块是否已被使用 */
-        if((MEM_REG(head) & 1) == 0)
+        if(((size_t)now->next & 1) == 0)
         {
-            sizeNow = MEM_REG(head) - head - sizeof(size_t);
+            sizeNow = (size_t)now->next - (size_t)now - sizeof(void *);
 
             /* 最小空闲匹配 */
             if((sizeNow >= size) && (sizeNow < sizeMin))
             {
                 sizeMin = sizeNow;
-                headMin = head;
+                free = now;
 
                 if(sizeMin == size)
                     break;
@@ -73,23 +70,23 @@ void *pvMrMemoryMalloc(size_t size)
         }
     }
 
-    if(headMin != 0)
+    if(free != NULL)
     {
         /* 最小匹配空间被划分后还有剩余空间，并能够存储下一个头部信息 */
-        if((sizeMin - size) >= sizeof(size_t))
+        if((sizeMin - size) >= sizeof(void *))
         {
-            free = MEM_REG(headMin);
-            MEM_REG(headMin) = headMin + sizeof(size_t) + size;
+            now = free->next;
+            free->next = (void *)free + sizeof(void *) + size;
 
             /* 剩余的空闲空间 */
-            MEM_REG(MEM_REG(headMin)) = free;
+            ((MrMemoryType *)free->next)->next = now;
         }
 
-        /* 返回空间管理信息之后的空间地址 */
-        pvMem = (void *)(headMin + sizeof(size_t));
-
         /* 起始地址最低置1，表示已使用 */
-        MEM_REG(headMin) |= 1;
+        free->next += 1;
+
+        /* 返回空间管理信息之后的空间地址 */
+        pvMem = (void *)free + sizeof(void *);
     }
 
     /* 退出临界段 */
@@ -101,16 +98,16 @@ void *pvMrMemoryMalloc(size_t size)
 void *pvMrMemoryCalloc(size_t nitems, size_t size)
 {
     void *pvMem;
-    size_t *puiData;
+    size_t *pData;
 
     /* 长度 N 字节对齐 */
     size = mrMemoryRoundUp(nitems * size);
 
     if((pvMem = pvMrMemoryMalloc(size)) != NULL)
     {
-        for(puiData = pvMem; size > 0; size -= sizeof(size_t))
+        for(pData = pvMem; size > 0; size -= sizeof(size_t))
         {
-            *puiData++ = 0;
+            *pData++ = 0;
         }
     }
 
@@ -120,16 +117,15 @@ void *pvMrMemoryCalloc(size_t nitems, size_t size)
 void *pvMrMemoryRealloc(void *pvMem, size_t size)
 {
     void *pvHandle;
-    MrMemoryType *ptypeMem = &g_typeMrMemoryHead;
-    size_t *pTarget, *pSource;
-    size_t head, tail, free;
+    MrMemoryType *ptypeMem = &g_typeMrMemoryHead, *now, *free, *next;
+    size_t *pTarget, *pSource, sizeFree;
 
     if((pvMem == NULL) || (size < 1))
         return NULL;
 
     /* 位移到头部管理信息位置 */
-    head = (size_t)pvMem - sizeof(size_t);
-    if((head < ptypeMem->head) || (ptypeMem->tail <= head))
+    now = pvMem - sizeof(void *);
+    if(((void *)now < ptypeMem->next) || (ptypeMem->tail <= (void *)now))
         return NULL;
 
     /* 长度 N 字节对齐 */
@@ -139,25 +135,25 @@ void *pvMrMemoryRealloc(void *pvMem, size_t size)
     vMrDisableIsr();
 
     /* 计算后续衔接空闲空间的大小 */
-    tail = MEM_REG(head) & (~(size_t)1);
-    tail = (((MEM_REG(tail) & 1) == 0) && (tail < ptypeMem->tail)) ? MEM_REG(tail) : tail;
+    next = now->next - 1;
+    next = (((size_t)next->next & 1) == 0) && ((void *)next < ptypeMem->tail) ? next->next : next;
 
-    free = tail - head - sizeof(size_t);
+    sizeFree = (size_t)next - (size_t)now - sizeof(void *);
 
     /* 直接拓展衔接的空闲空间 */
-    if(free >= size)
+    if(sizeFree >= size)
     {
         /* 多余的空间能够存储一个头部信息 */
-        if((free - size) >= sizeof(size_t))
+        if((sizeFree - size) >= sizeof(void *))
         {
             /* 截断成多余的空闲空间 */
-            free = head + sizeof(size_t) + size;
-            MEM_REG(free) = tail;
+            free = (void *)now + sizeof(void *) + size;
+            free->next = next;
 
-            tail = free;
+            next = free;
         }
 
-        MEM_REG(head) = tail | 1;
+        now->next = (void *)next + 1;
 
         pvHandle = pvMem;
     }
@@ -165,7 +161,7 @@ void *pvMrMemoryRealloc(void *pvMem, size_t size)
     else if((pvHandle = pvMrMemoryMalloc(size)) != NULL)
     {
         /* 转移拷贝数据 */
-        for(pTarget = (size_t *)pvHandle, pSource = (size_t *)pvMem; free > 0; free -= sizeof(size_t))
+        for(pTarget = (size_t *)pvHandle, pSource = (size_t *)pvMem; sizeFree > 0; sizeFree -= sizeof(size_t))
         {
             *pTarget++ = *pSource++;
         }
@@ -182,40 +178,39 @@ void *pvMrMemoryRealloc(void *pvMem, size_t size)
 
 void vMrMemoryFree(void *pvMem)
 {
-    MrMemoryType *ptypeMem = &g_typeMrMemoryHead;
-    size_t head, next;
+    MrMemoryType *ptypeMem = &g_typeMrMemoryHead, *now, *free;
 
     if(pvMem == NULL)
         return;
 
     /* 位移到头部管理信息位置 */
-    head = (size_t)pvMem - sizeof(size_t);
-    if((head < ptypeMem->head) || (ptypeMem->tail <= head))
+    free = pvMem - sizeof(void *);
+    if(((void *)free < ptypeMem->next) || (ptypeMem->tail <= (void *)free))
         return;
 
     /* 进入临界段 */
     vMrDisableIsr();
 
-    if((MEM_REG(head) & 1) != 0)
+    if(((size_t)free->next & 1) != 0)
     {
         /* 最低位清零，表示释放此片内存 */
-        MEM_REG(head) &= ~(size_t)1;
+        free->next -= 1;
 
         /* 遍历，找到当前待删除空间的前面一个空间 */
-        for(next = ptypeMem->head; MEM_REG(next) < head; next = MEM_REG(next) & (~(size_t)1));
+        for(now = ptypeMem->next; now->next < (void *)free; now = (void *)((size_t)now->next & (~(size_t)1)));
 
         /* 合并前面一个相连的空闲空间 */
-        if((MEM_REG(next) & 1) == 0)
+        if(((size_t)now->next & 1) == 0)
         {
-            MEM_REG(next) = MEM_REG(head);
-            head = next;
+            now->next = free->next;
+            free = now;
         }
 
         /* 合并后面一个相连的空闲空间 */
-        next = MEM_REG(head);
-        if(((MEM_REG(next) & 1) == 0) && (next < ptypeMem->tail))
+        now = free->next;
+        if((((size_t)now->next & 1) == 0) && ((void *)now < ptypeMem->tail))
         {
-            MEM_REG(head) = MEM_REG(next);
+            free->next = now->next;
         }
     }
 
