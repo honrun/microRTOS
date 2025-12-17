@@ -21,7 +21,7 @@ MrTaskType *g_ptypeMrTaskTimer = NULL;
 MrListType g_typeMrListTaskReady = {&g_typeMrListTaskReady, &g_typeMrListTaskReady};
 
 
-void vMrTaskIdle(uint32_t uiParameters)
+void vMrTaskIdle(size_t xParameters)
 {
     while(1)
     {
@@ -41,7 +41,7 @@ void vMrTaskError(void)
     }
 }
 
-int8_t cMrTaskCreate(MrTaskType **pptypeTask, vMrTaskFunction pvFunction, char *pcName, int32_t iPriority, int32_t iStackSize, uint32_t uiParameters)
+int8_t cMrTaskCreate(MrTaskType **pptypeTask, vMrTaskFunction pvFunction, char *pcName, int32_t iPriority, int32_t iStackSize, size_t xParameters)
 {
     MrTaskType *ptypeTask;
     uint8_t *pucStack;
@@ -66,7 +66,7 @@ int8_t cMrTaskCreate(MrTaskType **pptypeTask, vMrTaskFunction pvFunction, char *
     }
 
     /* 任务栈初始化 */
-    ptypeTask->pStack = puiMrTaskStackInit((uint32_t *)(pucStack + iStackSize), pvFunction, uiParameters);
+    ptypeTask->pStack = pvMrTaskStackInit((void *)(pucStack + iStackSize), pvFunction, xParameters);
 
     /* 任务名 */
     ptypeTask->name = pcName;

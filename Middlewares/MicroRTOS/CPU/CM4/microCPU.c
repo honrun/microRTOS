@@ -13,7 +13,7 @@ volatile int32_t g_iMrCpuIsrDepth = 0;
 
 
 /* 关闭芯片中断 */
-uint32_t uiMrCpuDisableIsr(void)
+size_t xMrCpuDisableIsr(void)
 {
     __set_BASEPRI(configMr_PRIORITY_SYSTEM_INTERRUPT_MAX);
 
@@ -23,7 +23,7 @@ uint32_t uiMrCpuDisableIsr(void)
 }
 
 /* 开启芯片中断 */
-void vMrCpuEnableIsr(uint32_t uiIsr)
+void vMrCpuEnableIsr(size_t xIsr)
 {
     /* 中断嵌套全部退出时，再把中断屏蔽位设置为0 */
     if((--g_iMrCpuIsrDepth) <= 0)
@@ -138,8 +138,9 @@ void vMrCpuStart( void )
 #define cpuINITIAL_XPSR     ( 0x01000000 )
 
 /* 任务栈初始化 */
-uint32_t *puiMrTaskStackInit(uint32_t *puiStackTop, void *pvTaskFunction, uint32_t uiParameters)
+void *pvMrTaskStackInit(void *pvStackTop, void *pvTaskFunction, size_t xParameters)
 {
+    uint32_t *puiStackTop = (uint32_t *)pvStackTop;
     /* Simulate the stack frame as it would be created by a context switch interrupt. */
     /* Offset added to account for the way the MCU uses the stack on entry/exit of interrupts, and to ensure alignment. */
     puiStackTop--;
@@ -149,7 +150,7 @@ uint32_t *puiMrTaskStackInit(uint32_t *puiStackTop, void *pvTaskFunction, uint32
     puiStackTop--;
     *puiStackTop = (uint32_t)vMrTaskError;      /* LR */
     puiStackTop -= 5;                           /* R12, R3, R2 and R1. */
-    *puiStackTop = uiParameters;                /* R0 */
+    *puiStackTop = (uint32_t)xParameters;       /* R0 */
 
     /* A save method is being used that requires each task to maintain its
      * own exec return value. */

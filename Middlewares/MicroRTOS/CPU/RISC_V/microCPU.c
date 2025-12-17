@@ -10,43 +10,43 @@
 
 typedef struct
 {
-    uint32_t epc;       /* epc - epc    - program counter                     */
+    size_t epc;         /* epc - epc    - program counter                     */
     /* RISC-V 使用 x1 寄存器保存子程序的返回地址 */
-    uint32_t ra;        /* x1  - ra     - return address for jumps            */
-    uint32_t mstatus;   /*              - machine status register             */
+    size_t ra;          /* x1  - ra     - return address for jumps            */
+    size_t mstatus;     /*              - machine status register             */
     /* RISC-V 使用 x3 寄存器存储全局指针。在 RISC-V 中，全局指针是一个特殊的指针，指向全局变量和静态数据区（static data region）的起始地址 */
-    uint32_t gp;        /* x3  - gp     - global pointer                      */
-    uint32_t tp;        /* x4  - tp     - thread pointer                      */
-    uint32_t t0;        /* x5  - t0     - temporary register 0                */
-    uint32_t t1;        /* x6  - t1     - temporary register 1                */
-    uint32_t t2;        /* x7  - t2     - temporary register 2                */
-    uint32_t s0_fp;     /* x8  - s0/fp  - saved register 0 or frame pointer   */
-    uint32_t s1;        /* x9  - s1     - saved register 1                    */
-    uint32_t a0;        /* x10 - a0     - return value or function argument 0 */
-    uint32_t a1;        /* x11 - a1     - return value or function argument 1 */
-    uint32_t a2;        /* x12 - a2     - function argument 2                 */
-    uint32_t a3;        /* x13 - a3     - function argument 3                 */
-    uint32_t a4;        /* x14 - a4     - function argument 4                 */
-    uint32_t a5;        /* x15 - a5     - function argument 5                 */
-    uint32_t a6;        /* x16 - a6     - function argument 6                 */
-    uint32_t a7;        /* x17 - s7     - function argument 7                 */
-    uint32_t s2;        /* x18 - s2     - saved register 2                    */
-    uint32_t s3;        /* x19 - s3     - saved register 3                    */
-    uint32_t s4;        /* x20 - s4     - saved register 4                    */
-    uint32_t s5;        /* x21 - s5     - saved register 5                    */
-    uint32_t s6;        /* x22 - s6     - saved register 6                    */
-    uint32_t s7;        /* x23 - s7     - saved register 7                    */
-    uint32_t s8;        /* x24 - s8     - saved register 8                    */
-    uint32_t s9;        /* x25 - s9     - saved register 9                    */
-    uint32_t s10;       /* x26 - s10    - saved register 10                   */
-    uint32_t s11;       /* x27 - s11    - saved register 11                   */
-    uint32_t t3;        /* x28 - t3     - temporary register 3                */
-    uint32_t t4;        /* x29 - t4     - temporary register 4                */
-    uint32_t t5;        /* x30 - t5     - temporary register 5                */
-    uint32_t t6;        /* x31 - t6     - temporary register 6                */
+    size_t gp;          /* x3  - gp     - global pointer                      */
+    size_t tp;          /* x4  - tp     - thread pointer                      */
+    size_t t0;          /* x5  - t0     - temporary register 0                */
+    size_t t1;          /* x6  - t1     - temporary register 1                */
+    size_t t2;          /* x7  - t2     - temporary register 2                */
+    size_t s0_fp;       /* x8  - s0/fp  - saved register 0 or frame pointer   */
+    size_t s1;          /* x9  - s1     - saved register 1                    */
+    size_t a0;          /* x10 - a0     - return value or function argument 0 */
+    size_t a1;          /* x11 - a1     - return value or function argument 1 */
+    size_t a2;          /* x12 - a2     - function argument 2                 */
+    size_t a3;          /* x13 - a3     - function argument 3                 */
+    size_t a4;          /* x14 - a4     - function argument 4                 */
+    size_t a5;          /* x15 - a5     - function argument 5                 */
+    size_t a6;          /* x16 - a6     - function argument 6                 */
+    size_t a7;          /* x17 - s7     - function argument 7                 */
+    size_t s2;          /* x18 - s2     - saved register 2                    */
+    size_t s3;          /* x19 - s3     - saved register 3                    */
+    size_t s4;          /* x20 - s4     - saved register 4                    */
+    size_t s5;          /* x21 - s5     - saved register 5                    */
+    size_t s6;          /* x22 - s6     - saved register 6                    */
+    size_t s7;          /* x23 - s7     - saved register 7                    */
+    size_t s8;          /* x24 - s8     - saved register 8                    */
+    size_t s9;          /* x25 - s9     - saved register 9                    */
+    size_t s10;         /* x26 - s10    - saved register 10                   */
+    size_t s11;         /* x27 - s11    - saved register 11                   */
+    size_t t3;          /* x28 - t3     - temporary register 3                */
+    size_t t4;          /* x29 - t4     - temporary register 4                */
+    size_t t5;          /* x30 - t5     - temporary register 5                */
+    size_t t6;          /* x31 - t6     - temporary register 6                */
 
 #ifdef ARCH_RISCV_FPU
-    uint32_t fx[32];
+    size_t fx[32];
 #endif
 }MrCpuStackType;
 
@@ -56,23 +56,23 @@ volatile int32_t g_iMrCpuIsrDepth = 0;
 
 
 /* 关闭芯片中断 */
-uint32_t uiMrCpuDisableIsr(void)
+size_t xMrCpuDisableIsr(void)
 {
-    uint32_t uiIsr;
+    size_t xIsr;
 
-    __asm volatile ("csrrc %0, mstatus, %1" :"=r"(uiIsr) :"r"(0x88));
+    __asm volatile ("csrrc %0, mstatus, %1" :"=r"(xIsr) :"r"(0x88));
 
     ++g_iMrCpuIsrDepth;
 
-    return uiIsr & 0x88;
+    return xIsr & 0x88;
 }
 
 /* 开启芯片中断 */
-void vMrCpuEnableIsr(uint32_t uiIsr)
+void vMrCpuEnableIsr(size_t xIsr)
 {
     --g_iMrCpuIsrDepth;
 
-    __asm volatile ("csrrs %0, mstatus, %1" :"=r"(uiIsr) :"r"(uiIsr));
+    __asm volatile ("csrrs %0, mstatus, %1" :"=r"(xIsr) :"r"(xIsr));
 }
 
 /* 触发任务切换 */
@@ -114,13 +114,13 @@ void vMrCpuSysTickHandler(void)
 }
 
 /* 任务栈初始化 */
-uint32_t *puiMrTaskStackInit(uint32_t *puiStackTop, void *pvTaskFunction, uint32_t uiParameters)
+void *pvMrTaskStackInit(void *pvStackTop, void *pvTaskFunction, size_t xParameters)
 {
-    MrCpuStackType *frame = (MrCpuStackType *)((uint32_t)puiStackTop - sizeof(MrCpuStackType));
+    MrCpuStackType *frame = (MrCpuStackType *)((size_t)pvStackTop - sizeof(MrCpuStackType));
 
-    frame->ra   = (uint32_t)vMrTaskError;
-    frame->a0   = (uint32_t)uiParameters;
-    frame->epc  = (uint32_t)pvTaskFunction;
+    frame->ra   = (size_t)vMrTaskError;
+    frame->epc  = (size_t)pvTaskFunction;
+    frame->a0   = xParameters;
 
     /* set MPIE to 1，以在开启任务时，自动开启全局中断 */
 #ifdef ARCH_RISCV_FPU
@@ -129,5 +129,5 @@ uint32_t *puiMrTaskStackInit(uint32_t *puiStackTop, void *pvTaskFunction, uint32
     frame->mstatus = 0x1880;
 #endif
 
-    return (uint32_t *)frame;
+    return (void *)frame;
 }

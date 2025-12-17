@@ -7,22 +7,22 @@
 #include "stdint.h"
 
 
-/* æ­¤ä¸¤ä¸ªå‡½æ•°éœ€è¦æˆå¯¹ä½¿ç”¨ */
+/* ´ËÁ½¸öº¯ÊıĞèÒª³É¶ÔÊ¹ÓÃ */
 void vMrStackSwitchToSystem(void);
 void vMrStackSwitchToTask(void);
 
-/* å…³é—­èŠ¯ç‰‡ä¸­æ–­ */
-#define vMrDisableIsr() do{ uint32_t MR_CPU_ISR_STATUS = uiMrCpuDisableIsr()
-/* å¼€å¯èŠ¯ç‰‡ä¸­æ–­ */
+/* ¹Ø±ÕĞ¾Æ¬ÖĞ¶Ï */
+#define vMrDisableIsr() do{ size_t MR_CPU_ISR_STATUS = xMrCpuDisableIsr()
+/* ¿ªÆôĞ¾Æ¬ÖĞ¶Ï */
 #define vMrEnableIsr()  vMrCpuEnableIsr(MR_CPU_ISR_STATUS); }while(0)
 
-uint32_t uiMrCpuDisableIsr(void);
-void vMrCpuEnableIsr(uint32_t uiIsr);
+size_t xMrCpuDisableIsr(void);
+void vMrCpuEnableIsr(size_t uiIsr);
 void vMrCpuYield(void);
 void vMrCpuStart(void);
 int8_t cMrCpuTickInit(void);
 void vMrCpuSysTickHandler(void);
-uint32_t *puiMrTaskStackInit(uint32_t *puiStackTop, void *pvTaskFunction, uint32_t uiParameters);
+void *pvMrTaskStackInit(void *pvStackTop, void *pvTaskFunction, size_t xParameters);
 
 
 #endif

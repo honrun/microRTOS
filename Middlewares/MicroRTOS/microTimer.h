@@ -5,7 +5,7 @@
 
 
 /* 定时器回调函数原型 */
-typedef void (* vMrTimerFunction)( uint32_t );
+typedef void (* vMrTimerFunction)( size_t );
 
 
 typedef enum {
@@ -20,15 +20,15 @@ typedef struct MrTimerStruct{
     MrListType list;                /* 节点 */
     int64_t duration;               /* 定时时长（Tick） */
     vMrTimerFunction pFunction;     /* 回调函数 */
-    uint32_t parameters;            /* 参数 */
+    size_t parameters;              /* 参数 */
     MrTimerStateEnum state;         /* 状态 */
 }MrTimerType;
 
 
-int8_t cMrTimerCreate(MrTimerType **pptypeTimer, vMrTimerFunction pvFunction, uint32_t uiParameters, int64_t lTick);
-int8_t cMrTimerStart(MrTimerType *ptypeTimer, MrTimerStateEnum enumState, int64_t lTick);
+int8_t cMrTimerCreate(MrTimerType **pptypeTimer, vMrTimerFunction pvFunction, size_t xParameters, int64_t lTick);
+int8_t cMrTimerStart(MrTimerType *ptypeTimer, MrTimerStateEnum enumState);
 int8_t cMrTimerStop(MrTimerType *ptypeTimer);
-void vMrTaskTimer(uint32_t uiParameters);
+void vMrTaskTimer(size_t xParameters);
 
 
 #endif // _microTimer_H_

@@ -8,7 +8,7 @@
 MrListType g_typeMrListTimer = {&g_typeMrListTimer, &g_typeMrListTimer};
 
 
-int8_t cMrTimerCreate(MrTimerType **pptypeTimer, vMrTimerFunction pvFunction, uint32_t uiParameters, int64_t lTick)
+int8_t cMrTimerCreate(MrTimerType **pptypeTimer, vMrTimerFunction pvFunction, size_t xParameters, int64_t lTick)
 {
     MrTimerType *ptypeTimer;
 
@@ -22,7 +22,7 @@ int8_t cMrTimerCreate(MrTimerType **pptypeTimer, vMrTimerFunction pvFunction, ui
     cMrListInit(&ptypeTimer->list, 0);
     ptypeTimer->list.pElement = ptypeTimer;
     ptypeTimer->pFunction     = pvFunction;
-    ptypeTimer->parameters    = uiParameters;
+    ptypeTimer->parameters    = xParameters;
     ptypeTimer->duration      = lTick;
 
     *pptypeTimer = ptypeTimer;
@@ -31,21 +31,20 @@ int8_t cMrTimerCreate(MrTimerType **pptypeTimer, vMrTimerFunction pvFunction, ui
 }
 
 /* 启动定时器 */
-int8_t cMrTimerStart(MrTimerType *ptypeTimer, MrTimerStateEnum enumState, int64_t lTick)
+int8_t cMrTimerStart(MrTimerType *ptypeTimer, MrTimerStateEnum enumState)
 {
     if(ptypeTimer == NULL)
         return 1;
-
-    ptypeTimer->state       = enumState;
-    ptypeTimer->duration    = lTick;
-    ptypeTimer->list.value  = lMrTickGet();
-    ptypeTimer->list.value += (ptypeTimer->state & MrTimerImmediately) ? 0 : ptypeTimer->duration;
 
     /* 进入临界段 */
     vMrDisableIsr();
 
     /* 从当前链表中移除 */
     cMrListRemove(&ptypeTimer->list);
+
+    ptypeTimer->state       = enumState;
+    ptypeTimer->list.value  = lMrTickGet();
+    ptypeTimer->list.value += (ptypeTimer->state & MrTimerImmediately) ? 0 : ptypeTimer->duration;
 
     /* 插入到定时器链表 */
     cMrListInsert(&g_typeMrListTimer, &ptypeTimer->list);
@@ -80,7 +79,7 @@ int8_t cMrTimerStop(MrTimerType *ptypeTimer)
 }
 
 /* 定时器溢出检查任务 */
-void vMrTaskTimer(uint32_t uiParameters)
+void vMrTaskTimer(size_t xParameters)
 {
     MrListType *ptypeList = NULL;
     MrTimerType *ptypeTimer = NULL;

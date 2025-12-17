@@ -17,7 +17,7 @@ int8_t cMrMessageCreate(MrMessageType **pptypeMessage, uint16_t usType, int16_t 
         return 2;
 
     /* 申请消息存储缓存 */
-    if((ptypeMessage->head = pvMrMemoryMalloc((int32_t)sSize * sLength)) == NULL)
+    if((ptypeMessage->head = pvMrMemoryMalloc((size_t)sSize * sLength)) == NULL)
     {
         vMrMemoryFree(ptypeMessage);
         return 3;
@@ -36,8 +36,8 @@ int8_t cMrMessageCreate(MrMessageType **pptypeMessage, uint16_t usType, int16_t 
     ptypeMessage->size = sSize;
 
     /* 初始化消息队列参数 */
-    ptypeMessage->tail  = ptypeMessage->head + (int32_t)sSize * sLength;
-    ptypeMessage->index = ptypeMessage->head + (int32_t)sSize * sLengthInit;
+    ptypeMessage->tail  = ptypeMessage->head + (size_t)sSize * sLength;
+    ptypeMessage->index = ptypeMessage->head + (size_t)sSize * sLengthInit;
     ptypeMessage->send  = ptypeMessage->read = ptypeMessage->head;
 
     *pptypeMessage = ptypeMessage;

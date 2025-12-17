@@ -25,39 +25,39 @@ void vApplicationIdleHook(void)
     vCPUUsageIdleHook();
 }
 
-void vMrTaskAdd(uint32_t uiParameters)
+void vMrTaskAdd(size_t xParameters)
 {
     while(1)
     {
-        ++uiParameters;
+        ++xParameters;
 
-        cMrMessageSend(g_ptypeMrMessageHandle, &uiParameters, 0);
+        cMrMessageSend(g_ptypeMrMessageHandle, &xParameters, 0);
 
         vMrDelayMs(NULL, 100);
     }
 }
 
-void vMrTaskDel(uint32_t uiParameters)
+void vMrTaskDel(size_t xParameters)
 {
     while(1)
     {
-        cMrMessageRead(g_ptypeMrMessageHandle, &uiParameters, 10);
+        cMrMessageRead(g_ptypeMrMessageHandle, &xParameters, 10);
 
-        uiParameters += uiParameters;
+        xParameters += xParameters;
     }
 }
 
 
-void vMrTimerDemo(uint32_t uiParameters)
+void vMrTimerDemo(size_t xParameters)
 {
-    uiParameters += uiParameters;
+    xParameters += xParameters;
 }
 
 
 void vMrRtosInit(void)
 {
     /* 创建消息队列 */
-    cMrMessageCreate(&g_ptypeMrMessageHandle, MR_MESSAGE_TYPE_FIFO, sizeof(uint32_t), 8, 0);
+    cMrMessageCreate(&g_ptypeMrMessageHandle, MR_MESSAGE_TYPE_FIFO, sizeof(size_t), 8, 0);
 
 
     /* 创建任务 */
@@ -68,9 +68,9 @@ void vMrRtosInit(void)
 
 
     /* 创建定时器 */
-    cMrTimerCreate(&g_ptypeMrTimerDemoHandle, vMrTimerDemo, (uint32_t)&g_ptypeMrTimerDemoHandle, 100);
+    cMrTimerCreate(&g_ptypeMrTimerDemoHandle, vMrTimerDemo, (size_t)&g_ptypeMrTimerDemoHandle, 100);
     /* 启动定时器 */
-    cMrTimerStart(g_ptypeMrTimerDemoHandle, MrTimerCirculation, g_ptypeMrTimerDemoHandle->duration);
+    cMrTimerStart(g_ptypeMrTimerDemoHandle, MrTimerCirculation);
 
 
     /* 启动RTOS运行 */

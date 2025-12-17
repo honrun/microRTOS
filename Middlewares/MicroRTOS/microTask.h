@@ -8,12 +8,12 @@
 
 
 /* 任务函数原型 */
-typedef void (* vMrTaskFunction)( uint32_t );
+typedef void (* vMrTaskFunction)( size_t );
 
 
 /* 任务控制块 */
 typedef struct MrTaskStruct{
-    volatile uint32_t *pStack;              /* 栈指针 */
+    volatile void *pStack;                  /* 栈指针 */
 
     MrListType listReady;                   /* 就绪节点 */
     MrListType listEvent;                   /* 事件节点 */
@@ -36,11 +36,11 @@ extern MrTaskType *g_ptypeMrTaskTimer;
 extern MrListType g_typeMrListTaskReady;
 
 
-void vMrTaskIdle(uint32_t uiParameters);
+void vMrTaskIdle(size_t xParameters);
 void vMrTaskError(void);
 MrTaskType *ptypeMrTaskReadyHighGet(void);
 
-int8_t cMrTaskCreate(MrTaskType **pptypeTask, vMrTaskFunction pvFunction, char *pcName, int32_t iPriority, int32_t iStackSize, uint32_t uiParameters);
+int8_t cMrTaskCreate(MrTaskType **pptypeTask, vMrTaskFunction pvFunction, char *pcName, int32_t iPriority, int32_t iStackSize, size_t xParameters);
 int8_t cMrTaskPrioritySet(MrTaskType *ptypeTask, int32_t priority);
 int32_t iMrTaskPriorityGet(MrTaskType *ptypeTask);
 int8_t cMrTaskResume(MrTaskType *ptypeTask);
